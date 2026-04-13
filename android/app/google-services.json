@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "629086388660",
+    "project_id": "ask-meu",
+    "storage_bucket": "ask-meu.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:629086388660:android:03f351eec6fdc12aa572e1",
+        "android_client_info": {
+          "package_name": "ask.meu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKkJj6bZ6tlDHFiCiEg69stKttVS-YXhU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:629086388660:android:20246fb8be41b7cda572e1",
+        "android_client_info": {
+          "package_name": "com.example.ask_meu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKkJj6bZ6tlDHFiCiEg69stKttVS-YXhU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
