@@ -4,6 +4,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Note: Ensure you have run 'flutterfire configure' to generate this file.
 import 'firebase_options.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   // 1. Ensure Flutter bindings are initialized before Firebase
@@ -753,6 +760,116 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _descController = TextEditingController();
+  
+  // Variables optimized for Web and Mobile compatibility
+  XFile? _selectedImage;
+  Uint8List? _imageBytes; 
+  bool _isSubmitting = false;
+
+  // 1. Pick Image (Web Compatible)
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      // readAsBytes is required for Microsoft Edge / Web testing
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _selectedImage = pickedFile;
+        _imageBytes = bytes;
+      });
+    }
+  }
+
+  // 2. Submit Report directly to the "mail" outbox
+  Future<void> _submitReport() async {
+    final description = _descController.text.trim();
+
+    if (description.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add a description of the problem.')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Get the currently logged-in student
+      final user = FirebaseAuth.instance.currentUser;
+      final studentEmail = user?.email ?? 'Unknown User';
+      final studentId = studentEmail.split('@').first; 
+
+      String? imageUrl;
+
+      // Upload the image to Firebase Storage if one was selected
+      if (_imageBytes != null) {
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('maintenance_reports/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        
+        await storageRef.putData(_imageBytes!); 
+        imageUrl = await storageRef.getDownloadURL();
+      }
+
+      // Write directly to the 'mail' collection to trigger the email extension
+      await FirebaseFirestore.instance.collection('mail').add({
+        'to': 'meumaintenance@gmail.com', 
+        'replyTo': studentEmail, // Allows maintenance to reply directly to the student
+        'message': {
+          'subject': '🔴 New Maintenance Report - From Student: $studentId',
+          'text': 'A new maintenance issue has been reported by $studentEmail.\n\nDescription: $description\nImage Link: ${imageUrl ?? "No image provided"}',
+          'html': '''
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+              <h2 style="color: #B22222;">New Maintenance Report</h2>
+              <p><strong>Reported By:</strong> $studentEmail (ID: $studentId)</p>
+              <p><strong>Description of Problem:</strong></p>
+              <p style="background-color: #f5f5f5; padding: 10px; border-left: 4px solid #B22222;">
+                $description
+              </p>
+              <br>
+              ${imageUrl != null ? '<a href="$imageUrl" style="background-color: #B22222; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">View Attached Photo</a>' : '<p><i>No photo attached.</i></p>'}
+            </div>
+          ''',
+        },
+      });
+
+      // Reset the UI on success
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Report sent directly to Maintenance!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _descController.clear();
+        setState(() {
+          _selectedImage = null;
+          _imageBytes = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFB22222),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -770,6 +887,8 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          
+          // Description Input
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -792,8 +911,11 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          
+          // Image Picker Area
           GestureDetector(
-            onTap: () {},
+            onTap: _pickImage,
+            behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
                 Container(
@@ -810,46 +932,59 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'Add picture (optional)',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    _selectedImage != null 
+                        ? 'Image selected' 
+                        : 'Add picture (optional)',
+                    style: TextStyle(
+                      color: _selectedImage != null ? Colors.green : Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
+                if (_selectedImage != null)
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                    onPressed: () => setState(() {
+                      _selectedImage = null;
+                      _imageBytes = null;
+                    }),
+                  )
               ],
             ),
           ),
           const SizedBox(height: 20),
+          
+          // Submit Button
           SizedBox(
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Report submitted successfully!'),
-                    backgroundColor: Color(0xFF2C2C2C),
-                  ),
-                );
-                _descController.clear();
-              },
+              onPressed: _isSubmitting ? null : _submitReport,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3A3A3A),
+                backgroundColor: const Color(0xFFB22222),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
                 elevation: 0,
+                disabledBackgroundColor: const Color(0xFFB22222).withOpacity(0.5),
               ),
-              child: const Text(
-                'Submit',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text(
+                      'Submit',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ],
