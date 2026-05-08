@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// Note: Ensure you have run 'flutterfire configure' to generate this file.
 import 'firebase_options.dart';
-import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() async {
   // 1. Ensure Flutter bindings are initialized before Firebase
@@ -760,10 +758,10 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _descController = TextEditingController();
-  
+
   // Variables optimized for Web and Mobile compatibility
   XFile? _selectedImage;
-  Uint8List? _imageBytes; 
+  Uint8List? _imageBytes;
   bool _isSubmitting = false;
 
   // 1. Pick Image (Web Compatible)
@@ -782,12 +780,14 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   // 2. Submit Report directly to the "mail" outbox
+  // 2. Submit Report (Free Tier Method using Firebase URL)
+  // 2. Submit Report (Using Free ImgBB API)
   Future<void> _submitReport() async {
     final description = _descController.text.trim();
 
     if (description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add a description of the problem.')),
+        const SnackBar(content: Text('Please add a description.')),
       );
       return;
     }
@@ -795,73 +795,93 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Get the currently logged-in student
       final user = FirebaseAuth.instance.currentUser;
-      final studentEmail = user?.email ?? 'Unknown User';
-      final studentId = studentEmail.split('@').first; 
+      final studentEmail = user?.email ?? 'Unknown Student';
+      final studentId = studentEmail.split('@').first;
 
       String? imageUrl;
 
-      // Upload the image to Firebase Storage if one was selected
+      // --- 1. IMGBB IMAGE UPLOAD ---
       if (_imageBytes != null) {
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('maintenance_reports/${DateTime.now().millisecondsSinceEpoch}.jpg');
-        
-        await storageRef.putData(_imageBytes!); 
-        imageUrl = await storageRef.getDownloadURL();
+        // Convert the image bytes to a Base64 string for ImgBB
+        final String base64Image = base64Encode(_imageBytes!);
+
+        // Paste your ImgBB API Key here
+        const String imgbbApiKey = 'db28fb2205195a52a7ef3bfee50a88ed';
+
+        final imgbbUrl = Uri.parse('https://api.imgbb.com/1/upload');
+        final imgbbResponse = await http.post(
+          imgbbUrl,
+          body: {
+            'key': imgbbApiKey,
+            'image': base64Image,
+          },
+        );
+
+        if (imgbbResponse.statusCode == 200) {
+          final jsonResponse = json.decode(imgbbResponse.body);
+          // Extract the public URL from the ImgBB response
+          imageUrl = jsonResponse['data']['url'];
+        } else {
+          throw Exception('Failed to upload image to ImgBB: ${imgbbResponse.body}');
+        }
       }
 
-      // Write directly to the 'mail' collection to trigger the email extension
-      await FirebaseFirestore.instance.collection('mail').add({
-        'to': 'meumaintenance@gmail.com', 
-        'replyTo': studentEmail, // Allows maintenance to reply directly to the student
-        'message': {
-          'subject': '🔴 New Maintenance Report - From Student: $studentId',
-          'text': 'A new maintenance issue has been reported by $studentEmail.\n\nDescription: $description\nImage Link: ${imageUrl ?? "No image provided"}',
-          'html': '''
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-              <h2 style="color: #B22222;">New Maintenance Report</h2>
-              <p><strong>Reported By:</strong> $studentEmail (ID: $studentId)</p>
-              <p><strong>Description of Problem:</strong></p>
-              <p style="background-color: #f5f5f5; padding: 10px; border-left: 4px solid #B22222;">
-                $description
-              </p>
-              <br>
-              ${imageUrl != null ? '<a href="$imageUrl" style="background-color: #B22222; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">View Attached Photo</a>' : '<p><i>No photo attached.</i></p>'}
-            </div>
-          ''',
-        },
+      // --- 2. SAVE TO FIRESTORE (Still keeping text history in Firebase) ---
+      await FirebaseFirestore.instance.collection('reports').add({
+        'studentEmail': studentEmail,
+        'studentId': studentId,
+        'description': description,
+        'imageUrl': imageUrl, // This is now the ImgBB link
+        'status': 'Pending',
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Reset the UI on success
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Report sent directly to Maintenance!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _descController.clear();
-        setState(() {
-          _selectedImage = null;
-          _imageBytes = null;
-        });
+      // --- 3. SEND EMAIL VIA EMAILJS ---
+      final emailjsUrl = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+      final emailResponse = await http.post(
+        emailjsUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'origin': 'http://localhost',
+        },
+        body: json.encode({
+          'service_id': 'service_p1e003j',
+          'template_id': 'template_j7q5sv2',
+          'user_id': 'bWX0R9UPlUN7m4G1T',
+          'template_params': {
+            'student_email': studentEmail,
+            'student_id': studentId,
+            'description': description,
+            // Pass the ImgBB URL to the EmailJS template
+            'image_url': imageUrl ?? 'https://via.placeholder.com/500x200?text=No+Image+Provided',
+          }
+        }),
+      );
+
+      if (emailResponse.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Report sent successfully!'), backgroundColor: Colors.green),
+          );
+          _descController.clear();
+          setState(() {
+            _selectedImage = null;
+            _imageBytes = null;
+          });
+        }
+      } else {
+        throw Exception('EmailJS Error: ${emailResponse.body}');
       }
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: const Color(0xFFB22222),
-            duration: const Duration(seconds: 5),
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: const Color(0xFFB22222)),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -887,7 +907,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Description Input
           Expanded(
             child: Container(
@@ -911,7 +931,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Image Picker Area
           GestureDetector(
             onTap: _pickImage,
@@ -934,8 +954,8 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    _selectedImage != null 
-                        ? 'Image selected' 
+                    _selectedImage != null
+                        ? 'Image selected'
                         : 'Add picture (optional)',
                     style: TextStyle(
                       color: _selectedImage != null ? Colors.green : Colors.white,
@@ -956,7 +976,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Submit Button
           SizedBox(
             width: double.infinity,
@@ -973,18 +993,18 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
               child: _isSubmitting
                   ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
                   : const Text(
-                      'Submit',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                'Submit',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
