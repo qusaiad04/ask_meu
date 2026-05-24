@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -539,6 +538,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 // ─────────────────────────────────────────
 // MAP SCREEN
 // ─────────────────────────────────────────
+
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -547,11 +547,16 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  String _selectedBuilding = 'N';
-  String _selectedFloor = '1';
+  // 1. Define the relationship between buildings and their floors
+  final Map<String, List<String>> _buildingData = {
+    'B': ['Basement', '1'],
+    'H': ['1', '2'],
+    'N': ['1', '3'],
+  };
 
-  final List<String> _buildings = ['N', 'A', 'B', 'C', 'D'];
-  final List<String> _floors = ['1', '2', '3', '4', '5'];
+  // 2. Set initial state
+  String _selectedBuilding = 'B';
+  String _selectedFloor = 'Basement';
 
   Widget _dropdownSection(
       String label, String sublabel, String value, List<String> items,
@@ -584,8 +589,7 @@ class _MapScreenState extends State<MapScreen> {
             items: items
                 .map((e) => DropdownMenuItem(
               value: e,
-              child:
-              Text(e, style: const TextStyle(color: Colors.white)),
+              child: Text(e, style: const TextStyle(color: Colors.white)),
             ))
                 .toList(),
             onChanged: onChanged,
@@ -594,6 +598,7 @@ class _MapScreenState extends State<MapScreen> {
             icon: const Icon(Icons.keyboard_arrow_down,
                 color: Color(0xFF888888), size: 20),
             isDense: true,
+            isExpanded: true, // Ensures the dropdown text doesn't overflow
           ),
         ),
       ],
@@ -602,6 +607,10 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 3. Dynamically generate the image path based on current selections
+    // Example output: 'assets/images/map_B_Basement.png'
+    String imagePath = 'assets/images/map_${_selectedBuilding}_$_selectedFloor.jpg';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 56, 20, 16),
       child: Column(
@@ -614,8 +623,17 @@ class _MapScreenState extends State<MapScreen> {
                   'Building',
                   'Select the building',
                   _selectedBuilding,
-                  _buildings,
-                      (v) => setState(() => _selectedBuilding = v!),
+                  _buildingData.keys.toList(),
+                      (v) {
+                    if (v != null) {
+                      setState(() {
+                        _selectedBuilding = v;
+                        // Reset the floor to the first available floor of the new building
+                        // to prevent errors if the old floor doesn't exist in the new building.
+                        _selectedFloor = _buildingData[v]!.first;
+                      });
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 24),
@@ -624,8 +642,12 @@ class _MapScreenState extends State<MapScreen> {
                   'Floor',
                   'Select the floor',
                   _selectedFloor,
-                  _floors,
-                      (v) => setState(() => _selectedFloor = v!),
+                  _buildingData[_selectedBuilding]!, // Only show floors for selected building
+                      (v) {
+                    if (v != null) {
+                      setState(() => _selectedFloor = v);
+                    }
+                  },
                 ),
               ),
             ],
@@ -641,12 +663,24 @@ class _MapScreenState extends State<MapScreen> {
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 children: [
+                  // 4. Use InteractiveViewer for zooming and panning the image
                   Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: CustomPaint(
-                        painter: FloorPlanPainter(),
-                        size: Size.infinite,
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: Image.asset(
+                        imagePath,
+                        fit: BoxFit.contain,
+                        // 5. Add an error builder so the app doesn't crash if an image is missing
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Text(
+                              'Missing Image:\n$imagePath',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -665,6 +699,7 @@ class _MapScreenState extends State<MapScreen> {
                         style: const TextStyle(
                           color: Color(0xFF555555),
                           fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -677,73 +712,6 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-}
-
-class FloorPlanPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF333333)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final w = size.width;
-    final h = size.height;
-
-    // Outer wall
-    canvas.drawRect(Rect.fromLTWH(10, 10, w - 20, h - 20), paint);
-
-    // Room dividers
-    canvas.drawLine(Offset(w * 0.5, 10), Offset(w * 0.5, h * 0.6), paint);
-    canvas.drawLine(Offset(10, h * 0.6), Offset(w - 10, h * 0.6), paint);
-    canvas.drawLine(Offset(w * 0.3, h * 0.6), Offset(w * 0.3, h - 10), paint);
-    canvas.drawLine(Offset(10, h * 0.35), Offset(w * 0.5, h * 0.35), paint);
-
-    // Door arcs
-    final doorPaint = Paint()
-      ..color = const Color(0xFF555555)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    canvas.drawArc(
-      Rect.fromLTWH(w * 0.5 - 20, h * 0.35 - 20, 40, 40),
-      0,
-      1.57,
-      false,
-      doorPaint,
-    );
-    canvas.drawArc(
-      Rect.fromLTWH(w * 0.3 - 20, h * 0.6 - 20, 40, 40),
-      0,
-      1.57,
-      false,
-      doorPaint,
-    );
-
-    // Furniture hints
-    final furniturePaint = Paint()
-      ..color = const Color(0xFF777777)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    // Desk
-    canvas.drawRect(
-        Rect.fromLTWH(w * 0.1, h * 0.15, w * 0.15, h * 0.12), furniturePaint);
-    // Sofa
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.55, h * 0.15, w * 0.35, h * 0.16),
-        const Radius.circular(4),
-      ),
-      furniturePaint,
-    );
-    // Table
-    canvas.drawOval(
-        Rect.fromLTWH(w * 0.1, h * 0.7, w * 0.12, h * 0.1), furniturePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─────────────────────────────────────────
@@ -779,8 +747,7 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  // 2. Submit Report directly to the "mail" outbox
-  // 2. Submit Report (Free Tier Method using Firebase URL)
+
   // 2. Submit Report (Using Free ImgBB API)
   Future<void> _submitReport() async {
     final description = _descController.text.trim();

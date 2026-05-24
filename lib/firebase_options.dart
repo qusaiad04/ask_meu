@@ -78,11 +78,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyA3R9RrUyWB7zxA_MWkPbDj4G4gk43BNb0',
-    appId: '1:629086388660:web:de94c77a94728b43a572e1',
+    appId: '1:629086388660:web:ae1b6de4a780e99ea572e1',
     messagingSenderId: '629086388660',
     projectId: 'ask-meu',
     authDomain: 'ask-meu.firebaseapp.com',
     storageBucket: 'ask-meu.firebasestorage.app',
-    measurementId: 'G-28QR0XK9GF',
+    measurementId: 'G-ZX61JF60BD',
   );
+
 }
