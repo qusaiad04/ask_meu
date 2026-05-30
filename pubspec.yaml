@@ -17,6 +17,10 @@ dependencies:
   firebase_storage: ^13.3.0
   cloud_firestore: ^6.3.0
   http: ^1.2.0
+  google_generative_ai: ^0.4.6
+  flutter_dotenv: ^6.0.1
+  flutter_markdown: ^0.7.2
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -28,3 +32,5 @@ flutter:
 
   assets:
     - assets/images/
+    - .env
+    - assets/data/cs_curriculum.json

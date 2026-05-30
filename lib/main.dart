@@ -8,6 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:ask_meu/services/ask_meu_ai_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   // 1. Ensure Flutter bindings are initialized before Firebase
@@ -17,6 +21,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await dotenv.load(fileName: ".env");
 
   runApp(const AskMeuApp());
 }
@@ -386,35 +391,82 @@ class _AiChatScreenState extends State<AiChatScreen> {
   final TextEditingController _msgController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  final List<Map<String, String>> _messages = [
-    {'role': 'user', 'text': 'When does the Registration start?'},
-    {
-      'role': 'assistant',
-      'text':
-      'The Registration will start in 18th of June 2026. Let me know if you need anything else.'
-    },
+  final AskMeuAIService _aiService = AskMeuAIService();
+  bool _isLoading = false;
+
+  // Start with an empty list. We will load saved messages in initState.
+  final List<Map<String, String>> _messages = [];
+
+  // Quick Action Chips definitions
+  final List<String> _quickPrompts = [
+    "Where is the IT Faculty?",
+    "How do I report an issue?",
+    "When are the midterm exams?",
+    "Navigate to the library"
   ];
 
-  void _sendMessage() {
-    final text = _msgController.text.trim();
+  @override
+  void initState() {
+    super.initState();
+    _loadChatHistory();
+  }
+
+  // --- PERSISTENCE: LOAD ---
+  Future<void> _loadChatHistory() async {
+    await _aiService.initializeService();
+
+    final prefs = await SharedPreferences.getInstance();
+    final String? savedData = prefs.getString('ask_meu_chat_history');
+
+    List<Map<String, String>> historyToLoad = [];
+
+    if (savedData != null) {
+      final List<dynamic> decoded = jsonDecode(savedData);
+      historyToLoad = decoded.map((e) => Map<String, String>.from(e)).toList();
+    }
+
+    setState(() {
+      _messages.addAll(historyToLoad);
+    });
+
+    // Ignite the AI's brain with the loaded history!
+    _aiService.startSessionWithHistory(_messages);
+    _scrollToBottom();
+  }
+
+  // --- PERSISTENCE: SAVE ---
+  Future<void> _saveChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('ask_meu_chat_history', jsonEncode(_messages));
+  }
+
+  // --- SEND MESSAGE LOGIC ---
+  void _sendMessage([String? chipText]) async {
+    final text = chipText ?? _msgController.text.trim();
     if (text.isEmpty) return;
 
     setState(() {
       _messages.add({'role': 'user', 'text': text});
-      _msgController.clear();
+      if (chipText == null) _msgController.clear();
+      _isLoading = true;
     });
 
-    // Simulate bot reply
-    Future.delayed(const Duration(milliseconds: 800), () {
-      setState(() {
-        _messages.add({
-          'role': 'assistant',
-          'text': 'Thank you for your question. Our team will assist you shortly.'
-        });
-      });
-      _scrollToBottom();
-    });
     _scrollToBottom();
+    await _saveChatHistory(); // Save user message immediately
+
+    // Call the real Gemini API
+    String aiResponse = await _aiService.sendMessage(text);
+
+    setState(() {
+      _messages.add({
+        'role': 'assistant',
+        'text': aiResponse
+      });
+      _isLoading = false;
+    });
+
+    _scrollToBottom();
+    await _saveChatHistory(); // Save AI message immediately
   }
 
   void _scrollToBottom() {
@@ -429,11 +481,60 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
   }
 
+  // --- PERSISTENCE: CLEAR MEMORY ---
+  Future<void> _clearChat() async {
+    // 1. Wipe the local storage
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('ask_meu_chat_history');
+
+    // 2. Clear the UI
+    setState(() {
+      _messages.clear();
+    });
+
+    // 3. Restart the AI's brain with a blank slate
+    _aiService.startSessionWithHistory([]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 56),
+        //const SizedBox(height: 56),
+        // --- CUSTOM HEADER ---
+        Container(
+          padding: const EdgeInsets.only(top: 56, left: 24, right: 16, bottom: 16),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E1E1E),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFF333333), width: 1),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Ask Meu AI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Color(0xFFB22222)),
+                tooltip: 'Clear Conversation',
+                onPressed: () {
+                  // Optional: You could wrap this in a showDialog to confirm first!
+                  _clearChat();
+                },
+              ),
+            ],
+          ),
+        ),
+
+        // --- CHAT WINDOW ---
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
@@ -442,20 +543,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
             itemBuilder: (ctx, i) {
               final msg = _messages[i];
               final isUser = msg['role'] == 'user';
+
               return Align(
-                alignment:
-                isUser ? Alignment.centerRight : Alignment.centerLeft,
+                alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 6),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.72,
+                    maxWidth: MediaQuery.of(context).size.width * 0.75,
                   ),
                   decoration: BoxDecoration(
-                    color: isUser
-                        ? const Color(0xFF3A3A3A)
-                        : const Color(0xFF2C2C2C),
+                    color: isUser ? const Color(0xFF3A3A3A) : const Color(0xFF2C2C2C),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -463,12 +561,25 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       bottomRight: Radius.circular(isUser ? 4 : 16),
                     ),
                   ),
-                  child: Text(
+                  child: isUser
+                  // User gets normal Text
+                      ? Text(
                     msg['text']!,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       height: 1.4,
+                    ),
+                  )
+                  // AI gets Markdown rendering
+                      : MarkdownBody(
+                    data: msg['text']!,
+                    selectable: true,
+                    styleSheet: MarkdownStyleSheet(
+                      p: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                      listBullet: const TextStyle(color: Colors.white, fontSize: 14),
+                      strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      em: const TextStyle(color: Colors.white, fontStyle: FontStyle.italic),
                     ),
                   ),
                 ),
@@ -476,6 +587,56 @@ class _AiChatScreenState extends State<AiChatScreen> {
             },
           ),
         ),
+
+        // --- LOADING INDICATOR ---
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Ask Meu AI is typing...',
+                style: TextStyle(
+                  color: Color(0xFF666666),
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+
+        // --- QUICK ACTION CHIPS ---
+        if (!_isLoading && _messages.length < 5) // Hide chips if bot is typing or chat gets long
+          Container(
+            width: double.infinity,
+            color: const Color(0xFF1E1E1E),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: _quickPrompts.map((prompt) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ActionChip(
+                      label: Text(
+                        prompt,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                      backgroundColor: const Color(0xFF2C2C2C),
+                      side: const BorderSide(color: Color(0xFF333333)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      onPressed: () => _sendMessage(prompt),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
+        // --- TEXT INPUT AREA ---
         Container(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: const BoxDecoration(
@@ -490,6 +651,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 child: TextField(
                   controller: _msgController,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
+                  enabled: !_isLoading,
                   onSubmitted: (_) => _sendMessage(),
                   decoration: InputDecoration(
                     hintText: 'What would you like to know?',
@@ -512,12 +674,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
               ),
               const SizedBox(width: 10),
               GestureDetector(
-                onTap: _sendMessage,
+                onTap: _isLoading ? null : _sendMessage,
                 child: Container(
                   width: 40,
                   height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFB22222),
+                  decoration: BoxDecoration(
+                    color: _isLoading ? const Color(0xFF555555) : const Color(0xFFB22222),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
