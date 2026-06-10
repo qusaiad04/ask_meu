@@ -1,0 +1,86 @@
+{
+  "registration_fees": {
+    "regular_semester_jod": 500,
+    "summer_semester_jod": 300
+  },
+  "masters_programs": [
+    { "faculty": "Law", "major": "Private Law", "base_price": 140, "price_after_discount": 98 },
+    { "faculty": "Law", "major": "Public Law", "base_price": 140, "price_after_discount": 98 },
+    { "faculty": "Business", "major": "MBA", "base_price": 200, "price_after_discount": 140 },
+    { "faculty": "Business", "major": "Accounting", "base_price": 150, "price_after_discount": 90 },
+    { "faculty": "Media", "major": "Media", "base_price": 180, "price_after_discount": 126 },
+    { "faculty": "Pharmacy", "major": "Pharmaceutical Sciences", "base_price": 180, "price_after_discount": 153 }
+  ],
+  "bachelors_programs": [
+    {
+      "faculty": "Information Technology",
+      "major": "Software Engineering",
+      "prices_by_tawjihi_score": { "below_80": 70, "80_to_84.9": 65, "85_to_89.9": 60, "90_to_97.9": 60, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Information Technology",
+      "major": "Computer Science",
+      "prices_by_tawjihi_score": { "below_80": 63, "80_to_84.9": 58.5, "85_to_89.9": 54, "90_to_97.9": 54, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Information Technology",
+      "major": "Cyber Security",
+      "prices_by_tawjihi_score": { "below_80": 70, "80_to_84.9": 65, "85_to_89.9": 60, "90_to_97.9": 60, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Information Technology",
+      "major": "Data Science and Artificial Intelligence",
+      "prices_by_tawjihi_score": { "below_80": 70, "80_to_84.9": 65, "85_to_89.9": 60, "90_to_97.9": 60, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Engineering and Design",
+      "major": "Architecture",
+      "prices_by_tawjihi_score": { "below_80": 110, "80_to_84.9": 55, "85_to_89.9": 55, "90_to_97.9": 55, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Engineering and Design",
+      "major": "Intelligent Systems Engineering",
+      "prices_by_tawjihi_score": { "below_80": 110, "80_to_84.9": 55, "85_to_89.9": 55, "90_to_97.9": 55, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Business",
+      "major": "Business Administration",
+      "prices_by_tawjihi_score": { "below_80": 48, "80_to_84.9": 44, "85_to_89.9": 40, "90_to_97.9": 40, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Business",
+      "major": "Accounting",
+      "prices_by_tawjihi_score": { "below_80": 42.5, "80_to_84.9": 42.5, "85_to_89.9": 42.5, "90_to_97.9": 42.5, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Business",
+      "major": "Financial Technology",
+      "prices_by_tawjihi_score": { "below_80": 54, "80_to_84.9": 49.5, "85_to_89.9": 45, "90_to_97.9": 45, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Arts and Educational Sciences",
+      "major": "English Language & Literature",
+      "prices_by_tawjihi_score": { "below_80": 40, "80_to_84.9": 40, "85_to_89.9": 40, "90_to_97.9": 40, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Law",
+      "major": "Law",
+      "prices_by_tawjihi_score": { "below_80": 39, "80_to_84.9": 35.75, "85_to_89.9": 32.5, "90_to_97.9": 32.5, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Pharmacy",
+      "major": "Pharmacy",
+      "prices_by_tawjihi_score": { "below_80": 130, "80_to_84.9": 78, "85_to_89.9": 71.5, "90_to_97.9": 65, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Allied Medical Sciences",
+      "major": "Medical Laboratory Sciences",
+      "prices_by_tawjihi_score": { "below_80": 60, "80_to_84.9": 55, "85_to_89.9": 50, "90_to_97.9": 50, "98_and_above": 0 }
+    },
+    {
+      "faculty": "Nursing",
+      "major": "Nursing",
+      "prices_by_tawjihi_score": { "below_80": 63, "80_to_84.9": 58.5, "85_to_89.9": 54, "90_to_97.9": 54, "98_and_above": 0 }
+    }
+  ]
+}

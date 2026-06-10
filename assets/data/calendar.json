@@ -1,0 +1,187 @@
+[
+  {
+    "semester": "First Semester",
+    "date": "14 September 2025",
+    "event": "بدء العام الجامعي (Start of the academic year)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "10 October 2025",
+    "event": "آخر يوم للتسجيل دون غرامة (Last day for registration without penalty)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "12 October 2025",
+    "event": "بدء التدريس وبدء امتحانات المستوى للطلبة الجدد (Start of teaching and placement exams for new students)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "17 October 2025",
+    "event": "نهاية أسبوع السحب والإضافة دون غرامة (End of add/drop week without penalty)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "29 - 30 November 2025",
+    "event": "بداية فترة اختبار نصف الفصل (Start of Midterm Exams)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "08 December 2025",
+    "event": "نهاية فترة اختبار نصف الفصل (End of Midterm Exams)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "25 December 2025",
+    "event": "عيد الميلاد المجيد (Christmas Holiday)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "01 January 2026",
+    "event": "رأس السنة الميلادية (New Year Holiday)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "04 January 2026",
+    "event": "بدء التسجيل للفصل الدراسي الثاني (Start of registration for Second Semester)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "22 January 2026",
+    "event": "آخر يوم للتدريس وآخر موعد للانسحاب من جميع المواد (Last day of teaching and last day to withdraw from all courses)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "25 January 2026",
+    "event": "بداية فترة الامتحانات النهائية النظرية (Start of Theoretical Final Exams)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "08 February 2026",
+    "event": "نهاية الامتحانات النهائية النظرية (End of Theoretical Final Exams)"
+  },
+  {
+    "semester": "First Semester",
+    "date": "12 February 2026",
+    "event": "إعلان نتائج الفصل الدراسي الأول (Announcement of First Semester Results)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "27 February 2026",
+    "event": "آخر يوم للتسجيل دون غرامة (Last day for registration without penalty)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "01 March 2026",
+    "event": "بدء التدريس للفصل الثاني (Start of teaching for Second Semester)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "06 March 2026",
+    "event": "نهاية أسبوع السحب والإضافة دون غرامة (End of add/drop week without penalty)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "20 - 23 March 2026",
+    "event": "عيد الفطر المبارك (Eid Al-Fitr Holiday)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "26 April 2026",
+    "event": "بداية فترة اختبار نصف الفصل (Start of Midterm Exams)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "01 May 2026",
+    "event": "عيد العمال (Labor Day)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "04 May 2026",
+    "event": "نهاية فترة اختبار نصف الفصل (End of Midterm Exams)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "10 May 2026",
+    "event": "بدء التسجيل للفصل الدراسي الصيفي (Start of registration for Summer Semester)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "25 May 2026",
+    "event": "عيد الاستقلال (Independence Day)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "26 - 30 May 2026",
+    "event": "عيد الأضحى المبارك (Eid Al-Adha Holiday)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "15 June 2026",
+    "event": "آخر موعد للانسحاب من جميع المواد (Last day to withdraw from all courses)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "18 June 2026",
+    "event": "آخر يوم للتدريس (Last day of teaching)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "20 June 2026",
+    "event": "بداية فترة الامتحانات النهائية النظرية (Start of Theoretical Final Exams)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "02 July 2026",
+    "event": "نهاية الامتحانات النهائية النظرية (End of Theoretical Final Exams)"
+  },
+  {
+    "semester": "Second Semester",
+    "date": "06 July 2026",
+    "event": "إعلان نتائج الفصل الدراسي الثاني (Announcement of Second Semester Results)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "12 July 2026",
+    "event": "بدء التدريس للفصل الصيفي (Start of teaching for Summer Semester)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "14 July 2026",
+    "event": "نهاية فترة السحب والإضافة (End of add/drop period)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "02 August 2026",
+    "event": "بداية فترة اختبار نصف الفصل (Start of Midterm Exams)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "05 August 2026",
+    "event": "نهاية فترة اختبار نصف الفصل (End of Midterm Exams)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "25 August 2026",
+    "event": "عيد المولد النبوي (Prophet's Birthday Holiday)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "27 August 2026",
+    "event": "آخر يوم للتدريس (Last day of teaching)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "01 September 2026",
+    "event": "بداية فترة الامتحانات النهائية النظرية (Start of Theoretical Final Exams)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "06 September 2026",
+    "event": "نهاية الامتحانات النهائية النظرية (End of Theoretical Final Exams)"
+  },
+  {
+    "semester": "Summer Semester",
+    "date": "09 September 2026",
+    "event": "إعلان نتائج الفصل الصيفي (Announcement of Summer Semester Results)"
+  }
+]
