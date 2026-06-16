@@ -28,6 +28,7 @@ Managing state efficiently using modern Flutter patterns for smooth navigation a
 Ensuring UI/UX consistency across different mobile screen sizes using Figma prototypes.
 
 👤 Developed by Qusai Al adawee
-GitHub: @qusaiad04
+
+GitHub: [@qusaiad04](https://github.com/qusaiad04)
 
 LinkedIn: www.linkedin.com/in/qusai-al-adawee
