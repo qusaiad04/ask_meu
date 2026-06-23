@@ -1,14 +1,37 @@
-gradle-wrapper.jar
-/.gradle
-/captures/
-/gradlew
-/gradlew.bat
-/local.properties
-GeneratedPluginRegistrant.java
-.cxx/
+# ────────────────────────────────────────────────────────
+# SECRETS & API KEYS (Crucial)
+# ────────────────────────────────────────────────────────
+.env
+assets/.env
+*.env
 
-# Remember to never publicly share your keystore.
-# See https://flutter.dev/to/reference-keystore
+# ────────────────────────────────────────────────────────
+# FLUTTER & DART INTERNALS
+# ────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+# ────────────────────────────────────────────────────────
+# ANDROID SPECIFIC CATCH-ALL
+# ────────────────────────────────────────────────────────
+android/.gradle/
+android/local.properties
+android/app/local.properties
+android/GeneratedPluginRegistrant.java
+android/.cxx/
+android/captures/
+
+# Keystores & Signing Secrets
+*.keystore
+*.jks
+*.p12
 key.properties
-**/*.keystore
-**/*.jks
+
+# ────────────────────────────────────────────────────────
+# SYSTEM FILES
+# ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
