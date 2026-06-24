@@ -1,4 +1,3 @@
-// lib/features/map/screens/map_screen.dart
 import 'package:flutter/material.dart';
 
 class MapScreen extends StatefulWidget {

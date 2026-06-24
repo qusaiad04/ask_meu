@@ -1,7 +1,5 @@
-// lib/main_shell.dart
 import 'package:flutter/material.dart';
 
-// Absolute package paths prevent any "URI doesn't exist" compilation issues
 import 'package:ask_meu/features/chat/screens/ai_chat_screen.dart';
 import 'package:ask_meu/features/map/screens/map_screen.dart';
 import 'package:ask_meu/features/report/screens/report_screen.dart';
@@ -16,7 +14,6 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
-  // REMOVED 'const' here because screens contain non-constant service initializations
   final List<Widget> _pages = [
     const AiChatScreen(),
     const MapScreen(),

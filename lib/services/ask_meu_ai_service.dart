@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart'; // 1. Changed to material.dart to fix debugPrint
+import 'package:flutter/material.dart';
+import 'dart:math';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -78,7 +79,8 @@ class AskMeuAIService {
 
   Future<String> sendMessage(String text) async {
     int retryCount = 0;
-    const int maxRetries = 3;
+    const int maxRetries = 4; // Bumped to 4 to give the exponential delay room to work
+    final random = Random();
 
     while (retryCount < maxRetries) {
       try {
@@ -88,16 +90,24 @@ class AskMeuAIService {
         retryCount++;
         debugPrint("=== Connection attempt $retryCount failed: $e ===");
 
-        if (e.toString().contains('503') && retryCount < maxRetries) {
-          // Wait 2 seconds before retrying to let the server spike pass
-          await Future.delayed(const Duration(seconds: 2));
+        if (e.toString().contains('503')) {
+          if (retryCount >= maxRetries) break; // Break out to return the final error message
+
+          // Exponential backoff: 2s, 4s, 8s... plus up to 500ms of random jitter
+          int delayMs = 2000 * pow(2, retryCount - 1).toInt() + random.nextInt(500);
+          debugPrint("=== 503 Error: Retrying in ${delayMs / 1000} seconds ===");
+
+          await Future.delayed(Duration(milliseconds: delayMs));
           continue;
         }
 
-        // If we exhausted all retries, show a clean user-friendly Arabic message
-        return 'خوادم الخدمة مشغولة حالياً بسبب الضغط العالي. يرجى المحاولة مرة أخرى خلال ثوانٍ.';
+        // If it's a different error (like no internet, or a 400 Bad Request), don't retry.
+        return 'حدث خطأ في الاتصال. يرجى التأكد من اتصالك بالإنترنت والمحاولة مجدداً.';
       }
     }
-    return 'عذراً، فشل الاتصال بخوادم الجامعة.';
+
+    // If we exhausted all 4 retries and it's still a 503
+    return 'خوادم الخدمة مشغولة حالياً بسبب الضغط العالي. يرجى المحاولة مرة أخرى خلال ثوانٍ.';
   }
+
 }
